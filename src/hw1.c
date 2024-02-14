@@ -73,13 +73,13 @@ void print_packet_sf(unsigned char packet[])
 
 unsigned int compute_checksum_sf(unsigned char packet[])
 {
-    int sum = get_src_addr(packet) + get_dest_addr(packet) + get_src_port(packet) + get_dest_port(packet) + get_fragment_offset(packet)
+    unsigned int sum = get_src_addr(packet) + get_dest_addr(packet) + get_src_port(packet) + get_dest_port(packet) + get_fragment_offset(packet)
             + get_packet_len(packet) + get_max_hop_count(packet) + get_comp_scheme(packet) + get_traf_class(packet);
 
-    for(int i = 0; i < (get_packet_len(packet) - 16) / 4; i++) {
+    for(unsigned int i = 0; i < (get_packet_len(packet) - 16) / 4; i++) {
         sum += abs((packet[i * 4 + 16] << 24) | (packet[i * 4 + 17] << 16) | (packet[i * 4 + 18] << 8) | (packet[i * 4 + 19]));
     }
-    return sum % (int)(pow(2, 23) - 1);
+    return sum % (unsigned int)(pow(2, 23) - 1);
 }
 
 unsigned int reconstruct_array_sf(unsigned char *packets[], unsigned int packets_len, int *array, unsigned int array_len) {
