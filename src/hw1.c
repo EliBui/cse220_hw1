@@ -43,29 +43,18 @@ int get_traf_class(unsigned char packet[]) {
 
 void print_packet_sf(unsigned char packet[])
 {
-    int srcAddr = get_src_addr(packet);
-    int destAddr = get_dest_addr(packet);
-    int srcPort = get_src_port(packet);
-    int destPort = get_dest_port(packet);
-    int fragmentOffset = get_fragment_offset(packet);
-    int packetLen = get_packet_len(packet);
-    int maxHopCount = get_max_hop_count(packet);
-    int checksum = get_checksum(packet);
-    int compScheme = get_comp_scheme(packet);
-    int trafClass = get_traf_class(packet);
-    
-    printf("Source Address: %d\n", srcAddr);
-    printf("Destination Address: %d\n", destAddr);
-    printf("Source Port: %d\n", srcPort);
-    printf("Destination Port: %d\n", destPort);
-    printf("Fragment Offset: %d\n", fragmentOffset);
-    printf("Packet Length: %d\n", packetLen);
-    printf("Maximum Hop Count: %d\n", maxHopCount);
-    printf("Checksum: %d\n", checksum);
-    printf("Compression Scheme: %d\n", compScheme);
-    printf("Traffic Class: %d\n", trafClass);
+    printf("Source Address: %d\n", get_src_addr(packet));
+    printf("Destination Address: %d\n", get_dest_addr(packet));
+    printf("Source Port: %d\n", get_src_port(packet));
+    printf("Destination Port: %d\n", get_dest_port(packet));
+    printf("Fragment Offset: %d\n", get_fragment_offset(packet));
+    printf("Packet Length: %d\n", get_packet_len(packet));
+    printf("Maximum Hop Count: %d\n", get_max_hop_count(packet));
+    printf("Checksum: %d\n", get_checksum(packet));
+    printf("Compression Scheme: %d\n", get_comp_scheme(packet));
+    printf("Traffic Class: %d\n", get_traf_class(packet));
     printf("Payload:");
-    for(int i = 0; i < (packetLen - 16) / 4; i++) {
+    for(int i = 0; i < (get_packet_len(packet) - 16) / 4; i++) {
         printf(" %d", ((packet[i * 4 + 16] << 24) | (packet[i * 4 + 17] << 16) | (packet[i * 4 + 18] << 8) | (packet[i * 4 + 19])));
     }
     printf("\n");
@@ -83,11 +72,37 @@ unsigned int compute_checksum_sf(unsigned char packet[])
 }
 
 unsigned int reconstruct_array_sf(unsigned char *packets[], unsigned int packets_len, int *array, unsigned int array_len) {
-    (void)packets;
-    (void)packets_len;
-    (void)array;
-    (void)array_len;
-    return -1;
+    int count = 0;
+    int packetsIndex = 0;
+    int arrayIndex = 0;
+    int payLoadLen;
+    
+    while(packetsIndex < packets_len) {
+        unsigned char *currPacket = packets[packetsIndex];
+        if(get_checksum(currPacket) != compute_checksum_sf(currPacket)) {
+            packetsIndex++;
+            continue;
+        }
+
+        payLoadLen = (get_packet_len(currPacket) - 16) / 4;
+        int payLoad[payLoadLen];
+        for(int i = 0; i < payLoadLen; i++) {
+            payLoad[i] = (currPacket[i * 4 + 16] << 24) | (currPacket[i * 4 + 17] << 16) | (currPacket[i * 4 + 18] << 8) | (currPacket[i * 4 + 19]);
+        }
+
+        arrayIndex = get_fragment_offset(currPacket) / 4;
+        for(int i = 0; i < payLoadLen; i++) {
+            if(arrayIndex < array_len) {
+                array[arrayIndex] = payLoad[i];
+                arrayIndex++;
+                count++;
+            } else {
+                break;
+            }
+        }
+        packetsIndex++;
+    }
+    return count;
 }
 
 unsigned int packetize_array_sf(int *array, unsigned int array_len, unsigned char *packets[], unsigned int packets_len,
