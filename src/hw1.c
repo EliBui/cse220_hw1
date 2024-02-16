@@ -110,17 +110,75 @@ unsigned int packetize_array_sf(int *array, unsigned int array_len, unsigned cha
                           unsigned int src_port, unsigned int dest_port, unsigned int maximum_hop_count,
                           unsigned int compression_scheme, unsigned int traffic_class)
 {
-    (void)array;
-    (void)array_len;
-    (void)packets;
-    (void)packets_len;
-    (void)max_payload;
-    (void)src_addr;
-    (void)dest_addr;
-    (void)src_port;
-    (void)dest_port;
-    (void)maximum_hop_count;
-    (void)compression_scheme;
-    (void)traffic_class;
-    return -1;
+    int arrayIndex = 0;
+    int packetsIndex = 0;
+    int intPerPayload = array_len / (max_payload / 4);
+    int fragOffset = 0;
+    int packetLen = 0;
+    int checksum = 0;
+
+    while(packetsIndex < packets_len && arrayIndex < array_len) {
+        if(intPerPayload > (array_len - arrayIndex)) {
+            intPerPayload = array_len - arrayIndex;
+        }
+        
+        packetLen = 16 + (intPerPayload * 4);
+        packets[packetsIndex] = malloc(packetLen);
+
+        //pack src_addr
+        packets[packetsIndex][0] = src_addr >> 20;
+        packets[packetsIndex][1] = src_addr >> 12;
+        packets[packetsIndex][2] = src_addr >> 4;
+
+        //shared byte for src and dest addr
+        packets[packetsIndex][3] = ((src_addr << 4) & 0xF0) | ((dest_addr >> 24) & 0x0F);
+
+        //pack dest_addr
+        packets[packetsIndex][4] = dest_addr >> 16;
+        packets[packetsIndex][5] = dest_addr >> 8;
+        packets[packetsIndex][6] = dest_addr;
+
+        //shared byte for src and dest port
+        packets[packetsIndex][7] = ((src_port << 4) & 0xF0) | (dest_port & 0x0F);
+
+        //pack fragment offset
+        fragOffset = arrayIndex * 4;
+        packets[packetsIndex][8] = fragOffset >> 6;
+
+        //shared byte for fragment offset and packet length
+        packets[packetsIndex][9] = ((fragOffset << 2) & 0xFC) | ((packetLen >> 12) & 0x03);
+
+        //pack packet length
+        packets[packetsIndex][10] = packetLen >> 4;
+
+        //shared byte for packet length and max hop
+        packets[packetsIndex][11] = ((packetLen << 4) & 0xF0) | ((maximum_hop_count >> 1) & 0x0F);
+
+        //shared byte for compression scheme and traffic class
+        packets[packetsIndex][15] = ((compression_scheme << 6) & 0xC0) | (traffic_class & 0x3F);
+
+        //pack payload
+        for(int i = 16; i < packetLen; i+=4) {
+            packets[packetsIndex][i] = array[arrayIndex] >> 24;
+            arrayIndex++;
+            packets[packetsIndex][i+1] = array[arrayIndex] >> 16;
+            arrayIndex++;
+            packets[packetsIndex][i+2] = array[arrayIndex] >> 8;
+            arrayIndex++;
+            packets[packetsIndex][i+3] = array[arrayIndex];
+            arrayIndex++;
+        }
+
+        //shared byte for max hop and checksum
+        checksum = compute_checksum_sf(packets[packetsIndex]);
+        packets[packetsIndex][12] = ((maximum_hop_count << 7) & 0x80) | ((checksum >> 16) & 0x7F);
+
+        //pack checksum
+        packets[packetsIndex][13] = checksum >> 8;
+        packets[packetsIndex][14] = checksum;
+        
+        packetsIndex++;
+    }
+
+    return packetsIndex+1;
 }
