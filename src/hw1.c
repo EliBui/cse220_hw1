@@ -126,7 +126,7 @@ unsigned int packetize_array_sf(int *array, unsigned int array_len, unsigned cha
         packetLen = 16 + (intPerPayload * 4);
         //printf("packetLen: %d\n", packetLen);
         packets[packetsIndex] = malloc(packetLen);
-
+//
         //pack src_addr
         packets[packetsIndex][0] = src_addr >> 20;
         packets[packetsIndex][1] = src_addr >> 12;
