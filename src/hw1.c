@@ -121,8 +121,10 @@ unsigned int packetize_array_sf(int *array, unsigned int array_len, unsigned cha
         if(intPerPayload > (array_len - arrayIndex)) {
             intPerPayload = array_len - arrayIndex;
         }
-        
+        //printf("arrayIndex begin: %d\n", arrayIndex);
+        //printf("intPerPayLoad: %d\n", intPerPayload);
         packetLen = 16 + (intPerPayload * 4);
+        //printf("packetLen: %d\n", packetLen);
         packets[packetsIndex] = malloc(packetLen);
 
         //pack src_addr
@@ -160,13 +162,11 @@ unsigned int packetize_array_sf(int *array, unsigned int array_len, unsigned cha
         //pack payload
         for(int i = 16; i < packetLen; i+=4) {
             packets[packetsIndex][i] = array[arrayIndex] >> 24;
-            arrayIndex++;
             packets[packetsIndex][i+1] = array[arrayIndex] >> 16;
-            arrayIndex++;
             packets[packetsIndex][i+2] = array[arrayIndex] >> 8;
-            arrayIndex++;
             packets[packetsIndex][i+3] = array[arrayIndex];
             arrayIndex++;
+            //printf("arrayIndex loop: %d\n", arrayIndex);
         }
 
         //shared byte for max hop and checksum
@@ -177,8 +177,9 @@ unsigned int packetize_array_sf(int *array, unsigned int array_len, unsigned cha
         packets[packetsIndex][13] = checksum >> 8;
         packets[packetsIndex][14] = checksum;
         
+        //printf("arrayIndex end: %d\n", arrayIndex);
         packetsIndex++;
     }
 
-    return packetsIndex+1;
+    return packetsIndex;
 }
