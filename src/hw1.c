@@ -192,9 +192,10 @@ unsigned int packetize_array_sf(int *array, unsigned int array_len, unsigned cha
         // printBinary(get_max_hop_count(packets[packetsIndex]));
 
         //pack checksum
-        packets[packetsIndex][13] = (checksum >> 8) & 0xFF;
+        //packets[packetsIndex][13] = (checksum >> 8) & 0xFF;
+        packets[packetsIndex][13] = (checksum & 0x0000FF00) >> 8;
         packets[packetsIndex][14] = checksum & 0xFF;
-        
+
         //print_packet_sf(packets[packetsIndex]);
         packetsIndex++;
         //printf("packet #%u\n", packetsIndex);
