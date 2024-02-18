@@ -106,17 +106,6 @@ unsigned int reconstruct_array_sf(unsigned char *packets[], unsigned int packets
     return count;
 }
 
-// void printBinary(unsigned int num) {
-//     int size = sizeof(unsigned int) * 8;
-//     unsigned int mask = 1 << (size - 1);
-//     for(int i = 0; i < size; i++) {
-//         printf((i % 8 == 0) ? " " : "");
-//         printf("%d", (num & mask) ? 1 : 0);
-//         mask >>= 1;
-//     }
-//     printf("\n");
-// }
-
 unsigned int packetize_array_sf(int *array, unsigned int array_len, unsigned char *packets[], unsigned int packets_len,
                           unsigned int max_payload, unsigned int src_addr, unsigned int dest_addr,
                           unsigned int src_port, unsigned int dest_port, unsigned int maximum_hop_count,
@@ -168,6 +157,8 @@ unsigned int packetize_array_sf(int *array, unsigned int array_len, unsigned cha
         //shared byte for packet length and max hop
         packets[packetsIndex][11] = (((packetLen << 4) & 0xF0) | ((maximum_hop_count >> 1) & 0x0F)) & 0xFF;
 
+        packets[packetsIndex][12] = ((maximum_hop_count << 7) & 0x80) & 0xFF;
+
         //shared byte for compression scheme and traffic class
         packets[packetsIndex][15] = (((compression_scheme << 6) & 0xC0) | (traffic_class & 0x3F)) & 0xFF;
 
@@ -185,15 +176,12 @@ unsigned int packetize_array_sf(int *array, unsigned int array_len, unsigned cha
 
         //shared byte for max hop and checksum
         checksum = compute_checksum_sf(packets[packetsIndex]);
-        packets[packetsIndex][12] = (((maximum_hop_count << 7) & 0x80) | ((checksum >> 16) & 0x7F)) & 0xFF;
+        packets[packetsIndex][12] = (packets[packetsIndex][12] | ((checksum >> 16) & 0x7F)) & 0xFF;
         // printf("maxHop og: ");
-        // printBinary(maximum_hop_count);
         // printf("extracted maxHop: ");
-        // printBinary(get_max_hop_count(packets[packetsIndex]));
 
         //pack checksum
-        //packets[packetsIndex][13] = (checksum >> 8) & 0xFF;
-        packets[packetsIndex][13] = (checksum & 0x0000FF00) >> 8;
+        packets[packetsIndex][13] = (checksum >> 8) & 0xFF;
         packets[packetsIndex][14] = checksum & 0xFF;
 
         //print_packet_sf(packets[packetsIndex]);
