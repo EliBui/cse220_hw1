@@ -9,5 +9,5 @@ Learning Outcomes:
 - Use the bit-level operations to perform computations.
 - Traverse and manipulate an array of bytes.
 
-The code I wrote for this assignment can be foud in cse220_hw1/src/  
+The code I wrote for this assignment can be found in cse220_hw1/src/  
 All other files were given by the instructor as part of the assignment template
